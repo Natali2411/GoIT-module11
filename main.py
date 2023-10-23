@@ -6,6 +6,8 @@ from datetime import datetime
 from re import Match
 from typing import Tuple, Any, Generator
 
+DATE_FORMAT = "%d-%m-%Y"
+
 
 class RecordAlreadyExistsException(Exception):
     """
@@ -45,7 +47,7 @@ class Name(Field):
         return self.__value
 
     @value.setter
-    def value(self, client_name: str) -> str:
+    def value(self, client_name: str) -> None:
         """
         Setter for setting Name value.
         :param client_name: Client name string.
@@ -60,12 +62,12 @@ class Birthday(Field):
     client.
     """
 
-    def __init__(self, birthday: datetime):
+    def __init__(self, birthday: str = None):
         self.value = birthday
         super().__init__(value=self.value)
 
     @property
-    def value(self) -> datetime:
+    def value(self) -> datetime.date:
         """
         Getter method to return birthday value.
         :return: Birthday value.
@@ -73,18 +75,22 @@ class Birthday(Field):
         return self.__value
 
     @value.setter
-    def value(self, birthday: datetime) -> None:
+    def value(self, birthday: str) -> None:
         """
         Setter for birthday value.
         :param birthday: Birthday value.
         :return: None.
         """
-        if (isinstance(birthday, datetime) and birthday <= datetime.today()) or \
-                birthday is None:
+        if birthday is None:
             self.__value = birthday
-        else:
-            raise ValueError(f"Client birthday is incorrect: '{birthday}'. Check it, "
-                             f"please")
+            return
+        try:
+            birthday_dt: datetime.date = datetime.strptime(birthday, DATE_FORMAT).date()
+            self.__value = birthday_dt
+        except Exception:
+            raise ValueError(f"Client birthday '{birthday}' or date format is "
+                             f"incorrect. Expected date format is '{DATE_FORMAT}'."
+                             f"Check it, please.")
 
 
 class Phone(Field):
@@ -122,7 +128,7 @@ class Record:
     phones.
     """
 
-    def __init__(self, name: str, birthday: datetime = None):
+    def __init__(self, name: str, birthday: str = None):
         self.name = Name(name)
         self.phones = []
         self.birthday = Birthday(birthday)
