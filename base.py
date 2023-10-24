@@ -141,7 +141,7 @@ class Record:
         """
         Method calculates the number of days to the next client's birthday. The method
         returns the number of days without fractional part.
-        :return:
+        :return: Number of days.
         """
         if self.birthday.value:
             today = datetime.today()
@@ -171,13 +171,15 @@ class Record:
                 return phone, idx
         return None, None
 
-    def add_phone(self, phone_num: str) -> None:
+    def add_phone(self, phone_num: str) -> str:
         """
         Method adds Phone instances into the list of phones for a particular client.
         :param phone_num: Phone number as a string.
-        :return: None.
+        :return: Notification with the information about adding phone.
         """
         self.phones.append(Phone(phone=phone_num))
+        return f"Phone number '{phone_num}' was successfully added to the contact '" \
+               f"{self.name.value}'"
 
     def edit_phone(self, old_phone: str, new_phone: str) -> None:
         """
@@ -214,6 +216,16 @@ class Record:
         found_phone, _ = self.get_phone_by_number(phone_num=phone_num)
         return found_phone
 
+    def add_birthday(self, birthday: str) -> str:
+        """
+        Method adds Birthday instance to the field 'birthday' for the particular client.
+        :param birthday: Phone number as a string.
+        :return: Notification with the information about adding birthday.
+        """
+        self.birthday = Birthday(birthday=birthday)
+        return f"Birthday '{birthday}' was successfully added to the birthday '" \
+               f"{self.name.value}'"
+
 
 class AddressBook(UserDict):
     """
@@ -223,10 +235,8 @@ class AddressBook(UserDict):
 
     def __init__(self):
         super().__init__()
-        self.start_counter = 0
-        self.end_counter = 0
 
-    def iterator(self, record_num: int) -> Generator:
+    def iterator(self, record_num: int = None) -> Generator:
         """
         Method that implements the logic of the generator to retrieve records from the
         Address Book by chunks.
@@ -234,16 +244,14 @@ class AddressBook(UserDict):
         :return: Generator.
         """
         book_vals = list(self.data.values())
-        book_keys = list(self.data.keys())
-        for _ in self.data:
-            self.end_counter += record_num
-            records = [dict(zip(book_keys[self.start_counter:self.end_counter],
-                                book_vals[self.start_counter:self.end_counter]))]
-            if records[0]:
-                yield records
-            else:
-                raise StopIteration("There are no records in Address Book")
-            self.start_counter += record_num
+        if not record_num:
+            step = 1
+        else:
+            step = record_num
+        for i in range(0, len(book_vals), step):
+            start = i
+            stop = i + step
+            yield book_vals[start:stop]
 
     def add_record(self, record: Record) -> None:
         """
